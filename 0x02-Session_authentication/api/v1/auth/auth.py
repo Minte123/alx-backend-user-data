@@ -11,27 +11,15 @@ class Auth:
 
     def require_auth(self, path: str, excluded_paths: List[str]) -> bool:
         """ Method for requiring authentication """
-        if path is None or excluded_paths is None or excluded_paths == []:
+        if path is None or excluded_paths is None or not len(excluded_paths):
             return True
-
-        slash_tolerant = True
-
-        for excluded_path in excluded_paths:
-            path_safe_slash = path
-            excluded_path_safe_slash = excluded_path
-
-            if slash_tolerant:
-                if path_safe_slash[-1] != '/':
-                    path_safe_slash += '/'
-                if excluded_path_safe_slash[-1] != '/':
-                    excluded_path_safe_slash += '/'
-
-            if excluded_path_safe_slash[-2] == '*':
-                if excluded_path_safe_slash[:-2] in path_safe_slash:
-                    return False
-
-            if path_safe_slash == excluded_path_safe_slash:
-                return False
+        # Add slash to all cases for consistency
+        if path[-1] != '/':
+            path += '/'
+        if excluded_paths[-1] != '/':
+            excluded_paths += '/'
+        if path in excluded_paths:
+            return False
         return True
 
     def authorization_header(self, request=None) -> str:
@@ -46,7 +34,10 @@ class Auth:
         return None
 
     def session_cookie(self, request=None):
-
+        ''' Return cookie value from request. '''
         if request is None:
             return None
-        return request.cookies.get(getenv('SESSION_NAME'))
+
+        cookie_key = getenv('SESSION_NAME')
+
+        return request.cookies.get(cookie_key)

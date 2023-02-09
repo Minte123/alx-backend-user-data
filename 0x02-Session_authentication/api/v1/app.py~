@@ -10,7 +10,6 @@ import os
 
 
 app = Flask(__name__)
-app.config['JSONIFY_PRETTYPRINT_REGULAR'] = True
 app.register_blueprint(app_views)
 CORS(app, resources={r"/api/v1/*": {"origins": "*"}})
 auth = None
@@ -22,15 +21,6 @@ if AUTH_TYPE == "auth":
 elif AUTH_TYPE == "basic_auth":
     from api.v1.auth.basic_auth import BasicAuth
     auth = BasicAuth()
-elif AUTH_TYPE == "session_auth":
-    from api.v1.auth.session_auth import SessionAuth
-    auth = SessionAuth()
-elif AUTH_TYPE == "session_exp_auth":
-    from api.v1.auth.session_exp_auth import SessionExpAuth
-    auth = SessionExpAuth()
-elif AUTH_TYPE == "session_db_auth":
-    from api.v1.auth.session_db_auth import SessionDBAuth
-    auth = SessionDBAuth()
 
 
 @app.errorhandler(401)
@@ -64,22 +54,16 @@ def before_request() -> str:
 
     excluded_paths = ['/api/v1/status/',
                       '/api/v1/unauthorized/',
-                      '/api/v1/forbidden/',
-                      '/api/v1/auth_session/login/']
+                      '/api/v1/forbidden/']
 
     if not auth.require_auth(request.path, excluded_paths):
         return
 
-    if auth.authorization_header(request) is None \
-            and auth.session_cookie(request) is None:
+    if auth.authorization_header(request) is None:
         abort(401)
 
-    # if auth.current_user(request) is None:
-    current_user = auth.current_user(request)
-    if current_user is None:
+    if auth.current_user(request) is None:
         abort(403)
-
-    request.current_user = current_user
 
 
 if __name__ == "__main__":
